@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Diabetes Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <main class="container">
+
+        <header class="page-header">
+            <h1>Smart Diabetes Prediction</h1>
+            <p class="subtitle">
+                Lifestyle-Based Healthcare Analytics Using Machine Learning
+            </p>
+        </header>
+
+        <form method="POST" action="{{ url_for('home') }}">
+
+            <section class="patient-section">
+                <h2>Patient Information</h2>
+                <p class="section-description">
+                    Enter your health and lifestyle information below.
+                </p>
+
+                <div class="form-grid">
+
+                    {% for feature in numeric %}
+                    <div class="field">
+                        <label for="{{ feature }}">
+                            {{ feature.replace('_', ' ') }}
+                        </label>
+
+                        <input type="number" id="{{ feature }}" name="{{ feature }}" step="any"
+                            placeholder="Enter {{ feature }}" value="{{ request.form.get(feature, '') }}" required>
+                    </div>
+                    {% endfor %}
+
+                    {% for feature, choices in options.items() %}
+                    <div class="field">
+                        <label for="{{ feature }}">
+                            {{ feature.replace('_', ' ') }}
+                        </label>
+
+                        <select id="{{ feature }}" name="{{ feature }}" required>
+                            <option value="">Select an option</option>
+
+                            {% set current_value = request.form.get(feature, '') %}
+
+                            {% for choice in choices %}
+                            {% if current_value == choice %}
+                            <option value="{{ choice }}" selected>
+                                {{ choice }}
+                            </option>
+                            {% else %}
+                            <option value="{{ choice }}">
+                                {{ choice }}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endfor %}
+
+                </div>
+
+                <button class="primary-button" type="submit">
+                    Predict Diabetes Status
+                </button>
+            </section>
+
+            {% if error %}
+            <div class="error">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            {% if result %}
+
+            <section class="dashboard">
+                <h2>Health Score</h2>
+
+                <div class="prediction-card">
+                    <h3>Prediction Result</h3>
+
+                    <p class="prediction-label">{{ result }}</p>
+                    <div class="prediction-value">{{ probability }}%</div>
+
+                    <div class="progress">
+                        <div class="progress-fill" style="width: {{ probability }}%;">
+                        </div>
+                    </div>
+
+                    <p class="muted">
+                        Model output for Diabetes_Status = 1
+                    </p>
+                    <small class="muted">
+                        This is not a clinically validated personal risk estimate.
+                    </small>
+                </div>
+
+                <h3>Your Health Indicators</h3>
+
+                <div class="stats">
+                    <div class="stat">
+                        <span>BMI</span>
+                        <strong>{{ values['BMI'] }}</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Sleep Hours</span>
+                        <strong>{{ values['Sleep_Hours'] }}</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Stress Score</span>
+                        <strong>{{ values['Stress_Score'] }}/10</strong>
+                    </div>
+                </div>
+
+                <!-- EXPLAINABLE AI SECTION -->
+                
+                <div class="explainability">
+                    <h3>Explainable AI - SHAP Feature Contributions</h3>
+                
+                    <p class="section-description">
+                        These are the strongest feature contributions for
+                        this prediction. Positive values push the model toward
+                        Diabetes_Status = 1, while negative values push it away.
+                    </p>
+                
+                    {% for item in explanations %}
+                    <div class="shap-item">
+                        <div class="shap-details">
+                            <strong>{{ item.name }}</strong>
+                
+                            {% if item.value > 0 %}
+                            <span class="shap-higher">
+                                +{{ item.value }}
+                            </span>
+                            {% else %}
+                            <span class="shap-lower">
+                                {{ item.value }}
+                            </span>
+                            {% endif %}
+                        </div>
+                
+                        <p class="shap-direction">
+                            Direction: {{ item.direction }}
+                        </p>
+                    <div class="shap-bar-track">
+                        <progress class="shap-bar {% if item.value > 0 %}positive{% else %}negative{% endif %}" value="{{ item.width }}"
+                            max="100">
+                        </progress>
+                    </div>
+
+                    </div>
+                    {% endfor %}
+                
+                    <p class="shap-note">
+                        SHAP values are expressed in model log-odds units.
+                        They explain the model's calculation, not medical causation.
+                    </p>
+                </div>
+
+
+            
+            </section>
+            <section class="lifestyle-guide">
+                <h2>Your Personalized Lifestyle Guide</h2>
+            
+                <p class="guide-intro">
+                    These suggestions are based on your reported habits
+                    and the factors influencing your model prediction.
+                    The strongest model contributors are highlighted first.
+                </p>
+            
+                <div class="guide-explanation">
+                    <h3>How to understand your top contributors</h3>
+            
+                    <p>
+                        Factors with larger absolute SHAP values have a
+                        stronger influence on this prediction.
+                        A positive SHAP value pushes the model estimate
+                        higher, while a negative value pushes it lower.
+                    </p>
+            
+                    <p>
+                        Some factors, such as sleep, exercise, diet and
+                        smoking, can be improved through lifestyle changes.
+                        Others, such as age and family history, cannot
+                        be changed but may inform preventive care.
+                    </p>
+            
+                    <p>
+                        <strong>Important:</strong>
+                        SHAP values describe the model's behavior.
+                        They do not prove that changing a factor will
+                        reduce your actual diabetes risk by a specific amount.
+                    </p>
+                </div>
+            
+                {% for item in lifestyle_guide %}
+                <div class="lifestyle-card">
+            
+                    <div class="lifestyle-card-header">
+                        <h3>{{ item.rank }}. {{ item.title }}</h3>
+            
+                        {% if item.top_contributor %}
+                        <span class="contributor-badge">
+                            Top Model Contributor
+                        </span>
+                        {% endif %}
+                    </div>
+            
+                    <p>{{ item.explanation }}</p>
+            
+                    <h4>What you can do</h4>
+            
+                    <ul>
+                        {% for action in item.actions %}
+                        <li>{{ action }}</li>
+                        {% endfor %}
+                    </ul>
+            
+                </div>
+                {% endfor %}
+            
+                <p class="lifestyle-disclaimer">
+                    This guide is for educational purposes and is not
+                    a medical diagnosis or personalized treatment plan.
+                    For individual diabetes screening or prevention advice,
+                    consult a qualified healthcare professional.
+                </p>
+            </section>
+
+
+            <section class="simulator">
+                <h2>What-If Lifestyle Simulator</h2>
+                <p class="section-description">
+                    Change lifestyle inputs to compare model predictions.
+                    This comparison does not establish actual medical benefits
+                    or causal effects.
+                </p>
+
+                <div class="form-grid">
+
+                    <div class="field">
+                        <label for="sim_BMI">Simulated BMI</label>
+                        <input type="number" id="sim_BMI" name="sim_BMI" step="any" min="10" max="80"
+                            value="{{ request.form.get('sim_BMI', values['BMI']) }}">
+                    </div>
+
+                    <div class="field">
+                        <label for="sim_Sleep_Hours">Simulated Sleep Hours</label>
+                        <input type="number" id="sim_Sleep_Hours" name="sim_Sleep_Hours" step="any" min="0" max="24"
+                            value="{{ request.form.get('sim_Sleep_Hours', values['Sleep_Hours']) }}">
+                    </div>
+
+                    <div class="field">
+                        <label for="sim_Stress_Score">Simulated Stress Score</label>
+                        <input type="number" id="sim_Stress_Score" name="sim_Stress_Score" step="any" min="0" max="10"
+                            value="{{ request.form.get('sim_Stress_Score', values['Stress_Score']) }}">
+                    </div>
+
+                    <div class="field">
+                        <label for="sim_Diet_Type">Simulated Diet Type</label>
+
+                        <select id="sim_Diet_Type" name="sim_Diet_Type">
+                            {% set selected_diet = request.form.get('sim_Diet_Type', values['Diet_Type']) %}
+
+                            {% for choice in options['Diet_Type'] %}
+                            {% if selected_diet == choice %}
+                            <option value="{{ choice }}" selected>
+                                {{ choice }}
+                            </option>
+                            {% else %}
+                            <option value="{{ choice }}">
+                                {{ choice }}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="sim_Exercise_Frequency">
+                            Simulated Exercise Frequency
+                        </label>
+
+                        <select id="sim_Exercise_Frequency" name="sim_Exercise_Frequency">
+                            {% set selected_exercise = request.form.get('sim_Exercise_Frequency',
+                            values['Exercise_Frequency']) %}
+
+                            {% for choice in options['Exercise_Frequency'] %}
+                            {% if selected_exercise == choice %}
+                            <option value="{{ choice }}" selected>
+                                {{ choice }}
+                            </option>
+                            {% else %}
+                            <option value="{{ choice }}">
+                                {{ choice }}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                </div>
+
+                <button class="primary-button" type="submit">
+                    Compare Predictions
+                </button>
+
+                <h3>Prediction Comparison</h3>
+
+                <div class="comparison">
+                    <div class="comparison-card">
+                        <span>Original Model Output</span>
+                        <strong>{{ probability }}%</strong>
+                    </div>
+
+                    <div class="comparison-card">
+                        <span>Simulated Model Output</span>
+                        <strong>{{ simulated_probability }}%</strong>
+                    </div>
+                </div>
+            </section>
+
+            {% endif %}
+
+        </form>
+
+        <footer class="disclaimer">
+            Educational prototype only. This system is not a medical diagnosis
+            or a substitute for professional medical testing.
+        </footer>
+
+    </main>
+</body>
+
+</html>
