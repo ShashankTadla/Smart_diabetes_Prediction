@@ -51,15 +51,9 @@
                             {% set current_value = request.form.get(feature, '') %}
 
                             {% for choice in choices %}
-                            {% if current_value == choice %}
-                            <option value="{{ choice }}" selected>
+                            <option value="{{ choice }}" {% if current_value==choice %}selected{% endif %}>
                                 {{ choice }}
                             </option>
-                            {% else %}
-                            <option value="{{ choice }}">
-                                {{ choice }}
-                            </option>
-                            {% endif %}
                             {% endfor %}
                         </select>
                     </div>
@@ -97,6 +91,7 @@
                     <p class="muted">
                         Model output for Diabetes_Status = 1
                     </p>
+
                     <small class="muted">
                         This is not a clinically validated personal risk estimate.
                     </small>
@@ -121,22 +116,23 @@
                     </div>
                 </div>
 
-                <!-- EXPLAINABLE AI SECTION -->
-                
+                <!-- SHAP EXPLAINABILITY -->
+
                 <div class="explainability">
                     <h3>Explainable AI - SHAP Feature Contributions</h3>
-                
+
                     <p class="section-description">
                         These are the strongest feature contributions for
                         this prediction. Positive values push the model toward
                         Diabetes_Status = 1, while negative values push it away.
                     </p>
-                
+
                     {% for item in explanations %}
                     <div class="shap-item">
+
                         <div class="shap-details">
                             <strong>{{ item.name }}</strong>
-                
+
                             {% if item.value > 0 %}
                             <span class="shap-higher">
                                 +{{ item.value }}
@@ -147,54 +143,56 @@
                             </span>
                             {% endif %}
                         </div>
-                
+
                         <p class="shap-direction">
                             Direction: {{ item.direction }}
                         </p>
-                    <div class="shap-bar-track">
-                        <progress class="shap-bar {% if item.value > 0 %}positive{% else %}negative{% endif %}" value="{{ item.width }}"
-                            max="100">
-                        </progress>
-                    </div>
+
+                        <div class="shap-bar-track">
+                            <progress class="shap-bar {% if item.value > 0 %}positive{% else %}negative{% endif %}"
+                                value="{{ item.width }}" max="100">
+                            </progress>
+                        </div>
 
                     </div>
                     {% endfor %}
-                
+
                     <p class="shap-note">
                         SHAP values are expressed in model log-odds units.
                         They explain the model's calculation, not medical causation.
                     </p>
                 </div>
 
-
-            
             </section>
+
+            <!-- PERSONALIZED LIFESTYLE GUIDE -->
+
             <section class="lifestyle-guide">
                 <h2>Your Personalized Lifestyle Guide</h2>
-            
+
                 <p class="guide-intro">
                     These suggestions are based on your reported habits
                     and the factors influencing your model prediction.
                     The strongest model contributors are highlighted first.
                 </p>
-            
+
                 <div class="guide-explanation">
                     <h3>How to understand your top contributors</h3>
-            
+
                     <p>
                         Factors with larger absolute SHAP values have a
                         stronger influence on this prediction.
                         A positive SHAP value pushes the model estimate
                         higher, while a negative value pushes it lower.
                     </p>
-            
+
                     <p>
                         Some factors, such as sleep, exercise, diet and
                         smoking, can be improved through lifestyle changes.
                         Others, such as age and family history, cannot
                         be changed but may inform preventive care.
                     </p>
-            
+
                     <p>
                         <strong>Important:</strong>
                         SHAP values describe the model's behavior.
@@ -202,33 +200,33 @@
                         reduce your actual diabetes risk by a specific amount.
                     </p>
                 </div>
-            
+
                 {% for item in lifestyle_guide %}
                 <div class="lifestyle-card">
-            
+
                     <div class="lifestyle-card-header">
                         <h3>{{ item.rank }}. {{ item.title }}</h3>
-            
+
                         {% if item.top_contributor %}
                         <span class="contributor-badge">
                             Top Model Contributor
                         </span>
                         {% endif %}
                     </div>
-            
+
                     <p>{{ item.explanation }}</p>
-            
+
                     <h4>What you can do</h4>
-            
+
                     <ul>
                         {% for action in item.actions %}
                         <li>{{ action }}</li>
                         {% endfor %}
                     </ul>
-            
+
                 </div>
                 {% endfor %}
-            
+
                 <p class="lifestyle-disclaimer">
                     This guide is for educational purposes and is not
                     a medical diagnosis or personalized treatment plan.
@@ -237,9 +235,11 @@
                 </p>
             </section>
 
+            <!-- WHAT-IF LIFESTYLE SIMULATOR -->
 
             <section class="simulator">
                 <h2>What-If Lifestyle Simulator</h2>
+
                 <p class="section-description">
                     Change lifestyle inputs to compare model predictions.
                     This comparison does not establish actual medical benefits
@@ -255,33 +255,33 @@
                     </div>
 
                     <div class="field">
-                        <label for="sim_Sleep_Hours">Simulated Sleep Hours</label>
+                        <label for="sim_Sleep_Hours">
+                            Simulated Sleep Hours
+                        </label>
                         <input type="number" id="sim_Sleep_Hours" name="sim_Sleep_Hours" step="any" min="0" max="24"
                             value="{{ request.form.get('sim_Sleep_Hours', values['Sleep_Hours']) }}">
                     </div>
 
                     <div class="field">
-                        <label for="sim_Stress_Score">Simulated Stress Score</label>
+                        <label for="sim_Stress_Score">
+                            Simulated Stress Score
+                        </label>
                         <input type="number" id="sim_Stress_Score" name="sim_Stress_Score" step="any" min="0" max="10"
                             value="{{ request.form.get('sim_Stress_Score', values['Stress_Score']) }}">
                     </div>
 
                     <div class="field">
-                        <label for="sim_Diet_Type">Simulated Diet Type</label>
+                        <label for="sim_Diet_Type">
+                            Simulated Diet Type
+                        </label>
 
                         <select id="sim_Diet_Type" name="sim_Diet_Type">
                             {% set selected_diet = request.form.get('sim_Diet_Type', values['Diet_Type']) %}
 
                             {% for choice in options['Diet_Type'] %}
-                            {% if selected_diet == choice %}
-                            <option value="{{ choice }}" selected>
+                            <option value="{{ choice }}" {% if selected_diet==choice %}selected{% endif %}>
                                 {{ choice }}
                             </option>
-                            {% else %}
-                            <option value="{{ choice }}">
-                                {{ choice }}
-                            </option>
-                            {% endif %}
                             {% endfor %}
                         </select>
                     </div>
@@ -296,15 +296,45 @@
                             values['Exercise_Frequency']) %}
 
                             {% for choice in options['Exercise_Frequency'] %}
-                            {% if selected_exercise == choice %}
-                            <option value="{{ choice }}" selected>
+                            <option value="{{ choice }}" {% if selected_exercise==choice %}selected{% endif %}>
                                 {{ choice }}
                             </option>
-                            {% else %}
-                            <option value="{{ choice }}">
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- NEW: SIMULATED SMOKING -->
+
+                    <div class="field">
+                        <label for="sim_Smoking">
+                            Simulated Smoking
+                        </label>
+
+                        <select id="sim_Smoking" name="sim_Smoking" required>
+                            {% set selected_smoking = request.form.get('sim_Smoking', values['Smoking']) %}
+
+                            {% for choice in options['Smoking'] %}
+                            <option value="{{ choice }}" {% if selected_smoking==choice %}selected{% endif %}>
                                 {{ choice }}
                             </option>
-                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- NEW: SIMULATED ALCOHOL -->
+
+                    <div class="field">
+                        <label for="sim_Alcohol">
+                            Simulated Alcohol Consumption
+                        </label>
+
+                        <select id="sim_Alcohol" name="sim_Alcohol" required>
+                            {% set selected_alcohol = request.form.get('sim_Alcohol', values['Alcohol']) %}
+
+                            {% for choice in options['Alcohol'] %}
+                            <option value="{{ choice }}" {% if selected_alcohol==choice %}selected{% endif %}>
+                                {{ choice }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
